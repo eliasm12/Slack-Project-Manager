@@ -1,30 +1,86 @@
 import logging
 import os
-from slack_bolt import App
-
+from slack_bolt import App, logger
+import mysql.connector
+from slack_sdk import WebClient
 logging.basicConfig(level=logging.DEBUG)
+from slack_sdk.errors import SlackApiError
 # Initializes your app with your bot token and signing secret
 app = App(
     token=os.environ.get("SLACK_BOT_TOKEN"),
     signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
-
-# Listens to incoming messages that contain "hello"
-# To learn available listener arguments,
-# visit https://slack.dev/bolt-python/api-docs/slack_bolt/kwargs_injection/args.html
+slack_token = os.environ["SLACK_BOT_TOKEN"]
+client = WebClient(token=slack_token)
 
 
+
+#database connection
+mydb = mysql.connector.connect(
+  host=os.environ.get("DBHOST"),
+  user=os.environ.get("DBUSER"),
+  password=os.environ.get("DBPASSWORD"),
+  database=os.environ.get("DBDATABASE"),
+  raise_on_warnings= True
+)
+
+#middleware
 @app.middleware  # or app.use(log_request)
 def log_request(logger, body, next):
     logger.debug(body)
     return next()
 
+
 def track_task():
-    return "Hello from track_task"
+    return ""
 
-def create_task(rask_name , task_sever , task_user):
-    return "{task_name} , {task_sever} , {task_user}"
+def get_projectslackchannelsid_from_channelid(channel_id):
+    mycursor = mydb.cursor()
+    sql = """SELECT project_slack_channels_id FROM project_slack_channels where channel_id = %s"""
+    mycursor.execute(sql , (channel_id,))
+    myresult = mycursor.fetchone()
+    return myresult[0]
 
+def insert_create_task(project_slack_channels_id):
+    mycursor = mydb.cursor()
+    sql = """INSERT INTO tasks (project_slack_channels_id) VALUES (%s)"""
+    mycursor.execute(sql , (project_slack_channels_id,))
+    mydb.commit()
+    return 1
+
+def insert_task_detail(task_id,name,value):
+    mycursor = mydb.cursor()
+    sql = """INSERT INTO task_details (task_id,name,value) VALUES (%s,%s,%s)"""
+    mycursor.execute(sql , (task_id,name,value,))
+    mydb.commit()
+    return 1    
+
+def create_task(task_name , severity , user_id,username, channel_id):
+    project_slack_channels_id = get_projectslackchannelsid_from_channelid(channel_id)
+#check if project_id is present 
+    if project_slack_channels_id:
+        task_id = insert_create_task(project_slack_channels_id)
+        if task_id:
+            res_task_name = insert_task_detail(task_id,"task_name",task_name)
+            res_severity = insert_task_detail(task_id,"severity",severity)
+            res_severity = insert_task_detail(task_id,"creator",user_id)
+            if res_task_name and res_severity:
+                return f"Created Ticket: {task_name} TicketID: {task_id} By: {username} with Severity Level: {severity}"
+            else:
+                return "Error creating Ticket details"
+        else:
+            return "Error Creating Ticket"
+    else:
+        return "Error Project Not Found"
+
+def chat_send_message(channel_id,result):
+    try:
+        response = client.chat_postMessage(
+            channel=channel_id,
+            text=result        )
+    except SlackApiError as e:
+        # You will get a SlackApiError if "ok" is False
+        assert e.response["error"]    # str like 'invalid_auth', 'channel_not_found'
 
 
 @app.command("/track")
@@ -51,7 +107,7 @@ def project_command(ack, body):
 
 
 @app.command("/create")
-def handle_command(body, ack, respond, client, logger):
+def handle_create_command(body, ack, respond, client, logger):
     ack()
     channel_id = body["channel_id"]
     respond()
@@ -131,7 +187,7 @@ def handle_command(body, ack, respond, client, logger):
 
 
 @app.action("static_select-action")
-def handle_some_action(ack, body, logger):
+def handle_severity_option(ack, body, logger):
     ack()
 
 
@@ -140,16 +196,17 @@ def handle_some_action(ack, body, logger):
 def view_submission(ack, body, logger):
     ack()
     user_id = body["user"]["id"]
+    username= body["user"]["username"]
     channel_id = body["view"]["private_metadata"]
-    task_name = "1"
-    severity = "2"
     arrval = body["view"]["state"]["values"]
     task_name_key = next(iter(arrval["task_name"]))
     task_name = arrval["task_name"][task_name_key]["value"]
     severity_key = next(iter(arrval["severity"]))
     severity = arrval["severity"]["static_select-action"]["selected_option"]["value"]
     ack()
-    logger.info(severity)
+    result = create_task(task_name , severity , user_id,username, channel_id)
+    chat_send_message(channel_id,result)
+    logger.info(result)
 
 
 @app.error
