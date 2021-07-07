@@ -17,7 +17,11 @@ list open or closed tickets/tasks for a user in a channel , use -all to display 
 resolve a task and make it closed
 
 `/track task_id ( start|stop )`
-track task time
+track task_id time
 
 `/current`
 to check what tasks are you currently time tracking
+
+`/comment task_id comment`
+add a comment on a task
+
