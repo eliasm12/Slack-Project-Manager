@@ -19,3 +19,5 @@ resolve a task and make it closed
 `/track task_id ( start|stop )`
 track task time
 
+`/current`
+to check what tasks are you currently time tracking
