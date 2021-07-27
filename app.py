@@ -41,7 +41,7 @@ def get_projectslackchannelsid_from_channelid(channel_id):
     myresult = mycursor.fetchone()
     logging.info(myresult[0])
     mycursor.close()
-    mydb.close()
+
     return myresult[0]
 
 def get_user_id_from_username(username):
@@ -50,7 +50,7 @@ def get_user_id_from_username(username):
     mycursor.execute(sql , (username,))
     myresult = mycursor.fetchone()
     mycursor.close()
-    mydb.close()
+
     return myresult[0]
 
 def get_username_from_user_id(user_id):
@@ -59,7 +59,7 @@ def get_username_from_user_id(user_id):
     mycursor.execute(sql , (user_id,))
     myresult = mycursor.fetchone()
     mycursor.close()
-    mydb.close()
+
     return myresult[0]
 
 def insert_create_task(project_slack_channels_id,user_id):
@@ -69,7 +69,7 @@ def insert_create_task(project_slack_channels_id,user_id):
     mydb.commit()
     #TODO try catch
     mycursor.close()
-    mydb.close()
+
     return mycursor.lastrowid
 
 def insert_task_detail(task_id,name,value):
@@ -78,7 +78,7 @@ def insert_task_detail(task_id,name,value):
     mycursor.execute(sql , (task_id,name,value,))
     mydb.commit()
     mycursor.close()
-    mydb.close()
+
     #TODO try catch check if inserted
     return 1    
 
@@ -88,7 +88,7 @@ def insert_task_status(task_id,task_status,user_id):
     mycursor.execute(sql , (task_id,task_status,user_id,))
     mydb.commit()
     mycursor.close()
-    mydb.close()
+
     #TODO try catch check inf inseretd
     return 1    
 
@@ -140,7 +140,7 @@ def get_task_attribute(task_id,name):
     mycursor.execute(sql , (task_id,name,))
     myresult = mycursor.fetchone()
     mycursor.close()
-    mydb.close()
+
     return myresult[0]            
 
 def list_channel_taks_table(myresult,task_status):
@@ -165,7 +165,7 @@ def get_channel_tasks(channel_id):
     mycursor.execute(sql , (channel_id,))
     myresult = mycursor.fetchall()
     mycursor.close()
-    mydb.close()
+
     return myresult
 
 def get_task_latest_status(task_id):
@@ -179,7 +179,7 @@ def get_task_latest_status(task_id):
     mycursor.execute(sql , (task_id,))
     myresult = mycursor.fetchone()
     mycursor.close()
-    mydb.close()
+
     return myresult[1]
 
 
@@ -194,7 +194,7 @@ def get_track_latest_status(task_id,user_id):
     mycursor.execute(sql , (task_id,user_id,))
     myresult = mycursor.fetchone()
     mycursor.close()
-    mydb.close()
+
     try:
         logging.info(myresult[0])
         return myresult[0]
@@ -207,7 +207,7 @@ def insert_track_cmd(task_id,cmd,user_id):
     mycursor.execute(sql , (task_id,cmd,user_id,))
     mydb.commit()
     mycursor.close()
-    mydb.close()
+
     #TODO check insert if succesful
     return mycursor.lastrowid
 
@@ -217,7 +217,7 @@ def assign_user_task(task_id,user_id,assign_user):
     mycursor.execute(sql , (task_id,user_id,assign_user,))
     mydb.commit()
     mycursor.close()
-    mydb.close()
+
     #TODO check insert if succesful
     return mycursor.lastrowid
 
@@ -246,7 +246,7 @@ def get_started_tasks_task_id(user_id):
           """
     mycursor.execute(sql , (user_id,))
     mycursor.close()
-    mydb.close()
+
     myresult = mycursor.fetchall()
     return myresult
 
